@@ -1,0 +1,63 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String       @id @default(uuid())
+  username    String       @unique
+  password    String
+  role        Role        @relation(fields: [role_id], references: [id])
+  role_id     Int          @default(1)
+  confirmed   Boolean      @default(false)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  jwtrefreshs Jwtrefresh[]
+
+  @@map("users")
+}
+
+model Jwtrefresh {
+  id        String   @id @default(uuid())
+  user      User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  user_id   String
+  ip        String   @db.VarChar(32)
+  ua        String
+  at        String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Role {
+  id              Int               @id @default(autoincrement())
+  name            String            @unique
+  users           User[]
+  rolePermissions RolePermissions[]
+  @@map("role")
+}
+
+model RolePermissions {
+  id            Int          @id @default(autoincrement())
+  role          Role        @relation(fields: [role_id], references: [id])
+  role_id       Int
+  permission    Permissions? @relation(fields: [permission_id], references: [id])
+  permission_id Int
+}
+
+model Permissions {
+  id              Int               @id @default(autoincrement())
+  action          String
+  rolePermissions RolePermissions[]
+  objects         Objects?          @relation(fields: [objectsId], references: [id])
+  objectsId       Int?
+}
+
+model Objects {
+  id          Int           @id @default(autoincrement())
+  name        String
+  permissions Permissions[]
+}
